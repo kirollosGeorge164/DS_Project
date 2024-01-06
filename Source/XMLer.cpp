@@ -186,6 +186,8 @@ void XMLer::decompressXml() {
     }
 }
 
+
+
 void XMLer::minifyXml(){
 
     stack_undo.push(resultTextEdit->toPlainText());
