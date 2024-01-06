@@ -221,4 +221,96 @@ void XMLer::minifyXml(){
     }
 }
 
+void XMLer::formatXml(){
+    stack_undo.push(resultTextEdit->toPlainText());
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+        QString xmlContent = resultTextEdit->toPlainText();
+
+        xmlContent=xmlContent.replace("\n", "");
+
+        QString previousTag="";
+        QString currentTag="";
+        int length=xmlContent.length();
+        for(int i=0;i<length;i++)
+        {
+
+            if(xmlContent[i]=='<')
+            {
+                int startTag = i + 1;
+                int endTag = xmlContent.indexOf('>', startTag);
+
+                QString currentTag = xmlContent.mid(startTag, endTag - startTag);
+                QString testTag=currentTag;
+
+                if(currentTag == "id" || currentTag == "name")
+                {
+
+
+                    int index=xmlContent.indexOf('>',xmlContent.indexOf('>',i+1)+1);
+                    xmlContent.insert(index+1,"\n");
+                    length=length+1;
+                    i=index;
+                    previousTag=currentTag;
+                    continue;
+                }
+                if(previousTag==(testTag.remove(0,1)))
+                {
+                    //qDebug() << "yarab";
+                    xmlContent.insert(i,"\n");
+                    length=length+1;
+                }
+                int Index=xmlContent.indexOf('>',i);
+                xmlContent.insert(Index+1,"\n");
+                length=length+1;
+                previousTag=currentTag;
+
+
+            }
+
+
+        }
+
+        QStringList list =xmlContent.split(u'\n',Qt::SkipEmptyParts);
+
+
+
+        QStack<int> indent;
+        QString line;
+        indent.push(0);
+        QString oldline;
+        QString newline;
+        QString formatted;
+        for(int i=0;i<list.length();i++)
+        {
+            line=list[i];
+            for(QChar character : line)
+            {
+                if(character !=' ')
+                    break;
+                line.remove(0,1);
+            }
+
+            if(oldline.contains("<") && !oldline.contains("/"))
+                indent.push((indent.top())+4);
+            if(line.contains("/") && line.count('<')==1)
+                indent.pop();
+            for(int k=0;k<indent.top();k++)
+                newline.append(" ");
+            newline.append(line);
+            formatted.append(newline+"\n");
+            oldline=newline;
+            newline.clear();
+        }
+        if (formatted.endsWith('\n')) {
+            // Remove the last character (newline)
+            formatted.chop(1);
+        }
+
+        resultTextEdit->setPlainText(formatted);
+    } else {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+
+}
+
 /****************************** Private Functions **********************************/
