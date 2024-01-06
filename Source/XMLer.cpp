@@ -266,13 +266,9 @@ void XMLer::formatXml(){
 
 
             }
-
-
         }
 
         QStringList list =xmlContent.split(u'\n',Qt::SkipEmptyParts);
-
-
 
         QStack<int> indent;
         QString line;
