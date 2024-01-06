@@ -182,4 +182,43 @@ void XMLer::saveXml()
     }
 }
 
+void XMLer::minifyXml(){
+
+    stack_undo.push(resultTextEdit->toPlainText());
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+
+
+        // Get the text from the textEdit object
+        QString originalText = resultTextEdit->toPlainText();
+        QString minified = "";
+
+        bool inTag = false;
+
+        for (int32_t i = 0; i < originalText.size(); i++) {
+            if (originalText[i] == '<') {
+                inTag = true;
+            }
+
+            if (!inTag && isWhitespace(originalText[i])) {
+                // Skip whitespace before content within tags
+                while ( isWhitespace(originalText[i+1])) {
+                    i++;
+                }
+                if(originalText[i+1]=='<')
+                    i++;
+
+            }
+
+            if (originalText[i] == '>') {
+                inTag = false;
+            }
+
+            minified += originalText[i];
+        }
+        resultTextEdit->setPlainText(minified);
+    } else {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+}
+
 /****************************** Private Functions **********************************/
