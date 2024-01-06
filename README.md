@@ -74,9 +74,9 @@ This project serves as a comprehensive XML manipulation and analysis tool capabl
 - Anas Hamed
 - Yousif Hazim
 - Sara Ashraf
-- Kirolose Gorge
+- Kirolose 
 - Ahmed Helmy
-- Mariem Abd el Galeel
+- Mariem Abdel Galeel
 
 ## License
 
