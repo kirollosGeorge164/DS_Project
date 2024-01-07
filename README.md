@@ -3,6 +3,7 @@
 # XML Parser
 
 ## The Program as ZIP file
+### To open the .exe file please open : build-untitled-Desktop_Qt_6_6_1_MinGW_64_bit-Debug Folder --> exe Folder --> run untitled.exe
 https://drive.google.com/drive/u/0/folders/10bWaBHOXUqMWN4nZUNghrD1UPySpHWq6
 
 ## Description
@@ -72,7 +73,7 @@ This project serves as a comprehensive XML manipulation and analysis tool capabl
 
 ## Contributors
 
-- Acknowledgment and credit to individuals or teams involved in the project development :
+Acknowledgment and credit to individuals or teams involved in the project development :
 - Mohamed Abdel Hamid
 - Anas Hamed
 - Yousif Hazim
@@ -81,6 +82,5 @@ This project serves as a comprehensive XML manipulation and analysis tool capabl
 - Ahmed Helmy
 - Mariem Abdel Galeel
 
-## License
-
-- Details about the project's licensing information and usage rights.
+## Program Interface
+![image](https://github.com/mohamedhamiid/XMLer/assets/111571591/f79fb672-bc4f-452a-b399-85db18bfb2de)
