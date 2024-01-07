@@ -639,6 +639,115 @@ void XMLer::findMutual() //take the id of users from two text editor
     }
 }
 
+void XMLer::suggestFollowers()
+{
+
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+        QString textContent=resultTextEdit->toPlainText();
+        QVector<QString> xmlLines;
+        QTextStream in(&textContent);
+
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            xmlLines.push_back(line);
+        }
+
+        QVector<Vertex> parsed;
+        parsed = xmlParse(xmlLines);
+        QString suggestedFollowers;
+        QString temp;
+        temp.clear();
+        QVector<int>followersIndex;
+        QVector<QString>suggestedIDS;
+        suggestedFollowers.clear();
+        for(int i=0;i<parsed.size();i++)
+        {
+           // qDebug()<<"the followers suggested for user " <<  parsed[i].user_name<<"are :\n";
+            for(int j=0;j<parsed[i].followers_id.size();j++)
+            {
+                for(int k=0;k<parsed.size();k++)
+                {
+                    if(parsed[i].followers_id[j]==parsed[k].user_id)
+                    {
+                        followersIndex.push_back(k);
+                        continue;
+                    }
+
+                }
+            }
+            for(int j=0;j<followersIndex.size();j++)
+            {
+                for(auto follower : parsed[followersIndex[j]].followers_id)
+                {
+                    if(!suggestedIDS.contains(follower) && follower !=parsed[i].user_id)
+                        suggestedIDS.push_back(follower);
+
+                }
+
+            }
+            for(int j=0;j<suggestedIDS.size();j++)
+            {
+                for(int k=0;k<parsed.size();k++)
+                {
+                    if(suggestedIDS[j]==parsed[k].user_id)
+                    {
+                        suggestedFollowers.append(parsed[k].user_name);
+                        suggestedFollowers.append(" whose id is ");
+                        suggestedFollowers.append(parsed[k].user_id);
+                        if(j<(suggestedIDS.size()-1))
+                            suggestedFollowers.append(",");
+                        if(j==(suggestedIDS.size()-1))
+                            suggestedFollowers.append(".");
+                        continue;
+                    }
+
+                }
+            }
+            if(suggestedFollowers.isEmpty())
+            {
+                temp.append("\n\nNo followers to suggest for user "+parsed[i].user_name+".");
+                    
+            }
+            else if(suggestedIDS.size()==1)
+            {
+                temp.append("\n\nThe follower suggested for user "+parsed[i].user_name+" is :\n"+suggestedFollowers);
+            }
+            else
+            {
+                temp.append("\n\nThe followers suggested for user "+parsed[i].user_name+" are :\n"+suggestedFollowers);
+            }
+
+            suggestedFollowers.clear();
+            suggestedIDS.clear();
+            followersIndex.clear();
+        }
+        if(temp.isEmpty())
+        {
+            temp="No followers to suggest :(\n";
+        }
+        if(temp[0]=='\n')
+        {
+            temp.remove(0,1);
+            temp.remove(0,1);
+        }
+        QDialog inputDialog;
+        inputDialog.setWindowTitle("Suggested Followers");
+
+        QFormLayout formLayout(&inputDialog);
+        QLabel *resultLabel = new QLabel(temp, &inputDialog);
+
+        formLayout.addRow(resultLabel);
+        QPushButton okButton("ok");
+        formLayout.addRow(&okButton);
+        QObject::connect(&okButton, &QPushButton::clicked, [&]() {
+            inputDialog.accept();
+        });
+        inputDialog.exec();
+
+    }
+}
+
 void XMLer::grapInfo()
 {   // for the most influencer user (has the most followers)
     int maxNumOfFollowers=-1;
