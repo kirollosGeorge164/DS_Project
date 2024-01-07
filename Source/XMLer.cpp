@@ -612,6 +612,77 @@ void XMLer::findMutual() //take the id of users from two text editor
 
     }
 }
+
+void XMLer::grapInfo()
+{   // for the most influencer user (has the most followers)
+    int maxNumOfFollowers=-1;
+    QString NameOfMaxNumOfFollowers="";
+    // for  the most active user (connected to lots of users)
+    int maxDeg=-1;
+    QString NameOfMaxDeg="";
+    int counter=0;
+
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+        QString textContent=resultTextEdit->toPlainText();
+        QVector<QString> xmlLines;
+        QTextStream in(&textContent);
+        QString finalResult;
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            xmlLines.push_back(line);
+        }
+
+        QVector<Vertex> parsed;
+        parsed = xmlParse(xmlLines);
+        for(int i=0;i<parsed.size();i++)
+        {
+            if(parsed[i].followers_id.size()>maxNumOfFollowers)
+            {
+                maxNumOfFollowers= parsed[i].followers_id.size();
+                NameOfMaxNumOfFollowers = parsed[i].user_name;
+            }
+        }
+        finalResult.append("The most influencer user is " +NameOfMaxNumOfFollowers+" who has "+QString::number(maxNumOfFollowers)+" followers.\n");
+        
+        // Testing
+        //qDebug()<<"the most influencer user ID" << maxNumOfFollowers<<"\n"<<"the most influencer user Name :"<<NameOfMaxNumOfFollowers;
+
+
+        for(int i=0;i<parsed.size();i++)
+        {
+            counter+= parsed[i].followers_id.size();
+            for (int j = i+1; j < parsed.size(); ++j) {
+                for(int y=0;y<parsed[j].followers_id.size();y++)
+                {
+                    if(parsed[i].user_id==parsed[j].followers_id[y])
+                        counter++;
+                }
+            }
+            if(counter>maxDeg)
+            {
+                maxDeg=counter;
+                NameOfMaxDeg=parsed[i].user_name;
+            }
+            counter=0;
+        }
+        finalResult.append("The most active user is " +NameOfMaxDeg+" who has "+QString::number(maxDeg)+" connections.\n");
+        QDialog inputDialog;
+        inputDialog.setWindowTitle("Graph Info");
+
+        QFormLayout formLayout(&inputDialog);
+        QLabel *resultLabel = new QLabel(finalResult, &inputDialog);
+
+        formLayout.addRow(resultLabel);
+        QPushButton okButton("ok");
+        formLayout.addRow(&okButton);
+        QObject::connect(&okButton, &QPushButton::clicked, [&]() {
+            inputDialog.accept();
+        });
+        inputDialog.exec();
+        qDebug()<<"the most active user Degree" << maxDeg<<"\n"<<"the most active userName:"<<NameOfMaxDeg;
+    }
+}
 /****************************** Private Functions **********************************/
 /* Level 1 */
 
