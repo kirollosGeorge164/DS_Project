@@ -378,4 +378,14 @@ void XMLer::undo(void) {
 
 }
 
+void XMLer::redo(void) {
+    if (!stack_redo.empty())
+    {
+        stack_undo.push(resultTextEdit->toPlainText());
+        resultTextEdit->setPlainText(stack_redo.top());
+        stack_redo.pop();
+    }
+
+}
+
 /****************************** Private Functions **********************************/
