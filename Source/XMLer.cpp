@@ -386,6 +386,69 @@ void XMLer::redo(void) {
 
 }
 
+void XMLer::findErrorXml(){
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+        QString textContent=resultTextEdit->toPlainText();
+
+        QVector<QString> xmlLines;
+        QTextStream in(&textContent);
+
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            xmlLines.push_back(line);
+        }
+
+        QVector<ErrorData> errorVector = findErrors(xmlLines);
+
+        QString errorDetails = displayErrors(QVector<ErrorData>(errorVector.begin(), errorVector.end()));
+
+
+        if (errorDetails.isEmpty()) {
+            QMessageBox::information(nullptr, "Ok", "There are no errors <3 ");
+        } else {
+            QMessageBox::warning(nullptr, "Warning", "There are errors :( \n\n" + errorDetails);
+        }
+
+
+    } else {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+
+
+}
+
+void XMLer::correctXml()
+{
+    QString textContent=resultTextEdit->toPlainText();
+    QVector<QString> xmlLines;
+    QTextStream in(&textContent);
+
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        xmlLines.push_back(line);
+    }
+
+    // Find errors in the XML file
+    QVector<ErrorData> errorVector = findErrors(xmlLines);
+
+    if (!errorVector.isEmpty()) {
+        // Correct errors in the XML file
+        QStringList correctedLines = error_corrector(xmlLines, errorVector);
+
+        // Join the QStringList elements into a single QString
+        //for texteditor
+        QString correctedText = correctedLines.join("\n");
+        stack_undo.push(resultTextEdit->toPlainText());
+        resultTextEdit->setPlainText(correctedText);
+
+        QMessageBox::information(nullptr, "Success", "Errors corrected and saved successfully.");
+    } else {
+        QMessageBox::information(nullptr, "No Errors", "There are no errors to correct.");
+    }
+
+}
+
 /* Level 2 */
 void XMLer::drawGraph()
 {
@@ -429,6 +492,192 @@ void XMLer::drawGraph()
 
 /****************************** Private Functions **********************************/
 /* Level 1 */
+
+/* detect error */
+bool XMLer::detectErrors(const QString& openTag, const QString& closedTag, QStack<QString>& tagStack, QString& errorType)
+{
+    QStack<QString> tempStack;
+
+    if (openTag.compare("INVALID", Qt::CaseInsensitive) && closedTag.compare("INVALID", Qt::CaseInsensitive))
+    {
+        if (openTag.compare(closedTag, Qt::CaseInsensitive))
+        {
+            errorType = "Mismatched tags: " + openTag + " and " + closedTag;
+            return false;
+        }
+    }
+
+    if (openTag.compare("INVALID", Qt::CaseInsensitive))
+    {
+        tagStack.push(openTag);
+    }
+    if (closedTag.compare("INVALID", Qt::CaseInsensitive))
+    {
+        if (!tagStack.isEmpty())
+        {
+            if (!closedTag.compare(tagStack.top(), Qt::CaseInsensitive)) //matching
+                tagStack.pop();
+            else
+            {
+                while (!tagStack.isEmpty() && closedTag.compare(tagStack.top(), Qt::CaseInsensitive)) //not matchy
+                {
+                    tempStack.push(tagStack.top());
+                    tagStack.pop();
+                }
+                // If the tag stack is empty, set errorType for a missing open tag
+                if (tagStack.isEmpty())
+                {
+                    errorType = "<" + closedTag + ">";
+                    while (!tempStack.isEmpty())
+                    {
+                        tagStack.push(tempStack.top());
+                        tempStack.pop();
+                    }
+                }
+                else
+                {
+                    // If tag stack is not empty, set errorType for a missing closed tag
+                    tagStack.pop();
+                    while (!tempStack.isEmpty())
+                    {
+                        tagStack.push(tempStack.top());
+                        tempStack.pop();
+                    }
+                    errorType = "</" + tagStack.top() + ">";
+                    tagStack.pop();
+                }
+                return false;
+            }
+        }
+        else
+        {
+            errorType = "<" + closedTag + ">";
+            return false;
+        }
+        return true;
+    }
+    return true;
+}
+
+/* find error */
+QVector<ErrorData> XMLer::findErrors(const QVector<QString>& xmlLines)
+{
+    QVector<ErrorData> errorVector;
+    ErrorData error;
+    QString errorType;
+    QStack<QString> tagStack;
+    QString line;
+
+    for (int i = 0; i < xmlLines.size(); i++)
+    {
+        line = xmlLines[i];
+        QString openTag;
+        QString closedTag;
+        openTag = extractOpeningTag(line);
+        closedTag = extractClosingTag(line);
+
+        if(i==2)
+            qDebug() << closedTag;
+
+        if (openTag.compare("INVALID", Qt::CaseInsensitive) || closedTag.compare("INVALID", Qt::CaseInsensitive)) //if valid
+        {
+            qDebug() << closedTag;
+            if (!detectErrors(openTag, closedTag, tagStack, errorType)) //detectErrors: returns false if there is an error
+            {
+                error.errorType = errorType;
+                error.errorLocation = i;
+
+                errorVector.push_back(error);
+            }
+        }
+    }
+
+    //lw file 5eles w lesa feh tags fel stack
+    int i = xmlLines.size();
+
+    while (!tagStack.isEmpty())
+    {
+        QString err = "</" + tagStack.top() + ">";
+        error.errorType = err;
+        error.errorLocation = i;
+        errorVector.push_back(error);
+        i++;
+        tagStack.pop();
+    }
+
+    return errorVector;
+}
+
+/* display error */
+QString XMLer::displayErrors(const QVector<ErrorData>& errorVector)
+{
+    QString errorMessage;
+
+    for (const auto& error : errorVector)
+    {
+        if (error.errorType.size() > 30)
+        {
+            errorMessage += QString("Error at line %1: %2\n").arg(error.errorLocation + 1).arg(error.errorType);
+        }
+        else
+        {
+            errorMessage += QString("Error at line %1: Missing %2\n").arg(error.errorLocation + 1).arg(error.errorType);
+        }
+    }
+
+    return errorMessage;
+}
+
+/* correct error */
+
+QStringList XMLer::error_corrector(const QStringList& xmlLines, const QVector<ErrorData>& errorVector)
+{
+    QStringList correctedLines;
+    int counter = 0;
+
+    for (int i = 0; i < xmlLines.size(); ++i) {
+        if (counter < errorVector.size() && i == errorVector[counter].errorLocation) {
+            const QString& errorType = QString(errorVector[counter].errorType);
+
+            if (errorType.length() > 25) {
+                // Mismatched tags error, replace the closing tag with the opening tag
+                QString correctedLine = xmlLines[i];
+                correctedLine.replace(extractClosingTag(xmlLines[i]), extractOpeningTag(xmlLines[i]));
+                correctedLines.push_back(correctedLine);
+            } else {
+                QString temp;
+                // Normal error, insert the error type and the original line
+                int count = 0;
+
+                for (const QChar& ch : xmlLines[i]) {
+                    if (ch.isSpace()) {
+                        // Increment count for each whitespace character
+                        count++;
+                    } else {
+                        // Break the loop when a non-whitespace character is encountered
+                        break;
+                    }
+                }
+                temp  =  xmlLines[i].trimmed();
+                correctedLines.push_back(QString(count, ' ') + errorType + temp);
+                // correctedLines.push_back(errorType + temp);
+                //  correctedLines.push_back(xmlLines[i]);
+            }
+
+            ++counter;
+        } else {
+            correctedLines.push_back(xmlLines[i]);
+        }
+    }
+
+    // If there are remaining errors at the end of the file, add them to the corrected lines
+    for (; counter < errorVector.size(); ++counter) {
+        correctedLines.push_back(QString(errorVector[counter].errorType));
+    }
+
+    return correctedLines;
+}
+
 
 /* Level 2 */
 void XMLer::createGraphVisualization(const QVector<Vertex> &vec)
