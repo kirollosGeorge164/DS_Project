@@ -1255,6 +1255,12 @@ QJsonValue XMLer::XMLtoJSON(QXmlStreamReader*reader){
     return stack.top().value;
 }
 
+// find spaces and new lines
+bool XMLer:: isWhitespace(QChar c)
+{
+    return (c=='\n'||c=='\t'||c==' ');
+}
+
 
 /* Level 2 */
 
