@@ -490,6 +490,128 @@ void XMLer::drawGraph()
     }
 }
 
+void XMLer::findMutual() //take the id of users from two text editor
+{
+
+    QString user1="";
+    QString user2="";
+
+    int user1Index=-1;
+    int user2Index=-1;
+
+    QVector<QString> mutualFriends;
+    QVector<QString> mutualNames;
+
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+        QString textContent=resultTextEdit->toPlainText();
+        QVector<QString> xmlLines;
+        QTextStream in(&textContent);
+
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            xmlLines.push_back(line);
+        }
+
+        QVector<Vertex> parsed;
+        parsed = xmlParse(xmlLines);
+
+        QDialog inputDialog;
+        inputDialog.setWindowTitle("Write their ID's");
+
+        QFormLayout formLayout(&inputDialog);
+
+        QLineEdit input1Edit;
+        QLineEdit input2Edit;
+        formLayout.addRow("User 1 ID:", &input1Edit);
+        formLayout.addRow("User 2 ID:", &input2Edit);
+
+        QPushButton okButton("find");
+        formLayout.addRow(&okButton);
+        QPushButton okayButton("ok");
+        formLayout.addRow(&okayButton);
+        QObject::connect(&okayButton, &QPushButton::clicked, [&]() {
+            inputDialog.accept();
+        });
+        QObject::connect(&okButton, &QPushButton::clicked, [&]() {
+            QString user1 = input1Edit.text();
+            QString user2 = input2Edit.text();
+            mutualFriends.clear();
+            mutualNames.clear();
+            // Process the input as needed
+            // qDebug() << "Name: " << name;
+            // qDebug() << "Age: " << age;
+
+            for(int i=0;i<parsed.size();i++)
+            {
+                if(user1== parsed[i].user_id)
+                    user1Index=i;
+
+                if(user2== parsed[i].user_id)
+                    user2Index=i;
+
+            }
+
+            for (int i = 0; i < parsed[user1Index].followers_id.size(); i++)
+            {
+
+                for (int j = 0; j < parsed[user2Index].followers_id.size(); j++)
+                {
+                    if(parsed[user1Index].followers_id[i]==parsed[user2Index].followers_id[j])
+                        mutualFriends.push_back((parsed[user1Index].followers_id[i]));
+                }
+
+            }
+            for(int i=0;i<mutualFriends.size();i++)
+            {
+                for(int j=0;j<parsed.size();j++)
+                {
+                    if(mutualFriends[i]==parsed[j].user_id)
+                        mutualNames.push_back(parsed[j].user_name);
+                }
+
+            }
+            QString finalResult;
+            if(!mutualFriends.empty())
+            {
+                if(mutualFriends.size()==1)
+                    finalResult="The mutual follower is :\n";
+                else
+                    finalResult="The mutual followers are :\n";
+                for(int i=0;i<mutualFriends.size();i++)
+                {
+                    finalResult+=mutualNames[i];
+                    finalResult+=" whose id is ";
+                    finalResult+=mutualFriends[i];
+                    if(i<(mutualFriends.size()-1))
+                        finalResult+=" and ";
+                    if(i==(mutualFriends.size()-1))
+                        finalResult+=".";
+                }
+            }
+            else
+            {
+                finalResult="There are no mutual followers between the 2 users \n";
+            }
+
+            //inputDialog.accept();
+            QDialog outputDialog;
+            outputDialog.setWindowTitle("Mutual Followers");
+            //QLabel *resultLabel = new QLabel(finalResult, this);
+            QLabel *resultLabel = new QLabel(finalResult, &outputDialog);
+            QVBoxLayout *layout2 = new QVBoxLayout(&outputDialog);
+            layout2->addWidget(resultLabel);
+            QPushButton *okkButton=new QPushButton("ok", &outputDialog);
+            layout2->addWidget(okkButton);
+            QObject::connect(okkButton, &QPushButton::clicked, [&]() {
+                outputDialog.accept();
+            });
+            outputDialog.exec();
+        });
+        inputDialog.exec();
+
+    }
+}
 /****************************** Private Functions **********************************/
 /* Level 1 */
 
