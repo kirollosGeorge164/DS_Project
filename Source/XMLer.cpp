@@ -1128,6 +1128,88 @@ QStringList XMLer::error_corrector(const QStringList& xmlLines, const QVector<Er
 
     return correctedLines;
 }
+//JSON format
+void XMLer::open(const QString &Block , QString *JSON) {
+    if (Block == "users" || Block == "posts" || Block == "followers" || Block == "topics") {
+        *JSON = *JSON + ": [";
+    } else if (Block == "name" || Block == "id" || Block == "body") {
+        *JSON = *JSON + ": \"";
+    } else if (Block == "post" || Block == "topic" || Block == "user") {
+        *JSON = *JSON + ": {";
+    } else {
+        *JSON = *JSON + ": {";
+    }
+}
+
+void XMLer::close(const QString &Block, QString *JSON) {
+    if (Block == "/users" || Block == "/posts" || Block == "/followers" || Block == "/topics") {
+        *JSON = *JSON + "],";
+    } else if (Block == "/name" || Block == "/id" || Block == "/body") {
+        *JSON = *JSON + "\",";
+    } else if (Block == "/post" || Block == "/topic" || Block == "/user") {
+        *JSON = *JSON + "},";
+    } else {
+        *JSON = *JSON + "},";
+    }
+}
+
+QJsonValue XMLer::XMLtoJSON(QXmlStreamReader*reader){
+    QStack<Node> stack;
+    while (!reader->atEnd()) {
+        switch (reader->tokenType()) {
+        case QXmlStreamReader::StartElement: {
+
+            const QStringView view = reader->name();
+            const QString &name = view.toString();
+
+            bool isArray = (reader->tokenType() == QXmlStreamReader::StartElement || (!stack.isEmpty() && stack.top().isArray));
+            // Create a new node and push it onto the stack
+            stack.push({QJsonValue(), name, isArray, &stack.top()});
+            if (isArray) {
+                // Start an array
+                stack.top().value = QJsonArray();
+            } else {
+                // Start an object
+                stack.top().value = QJsonObject();
+            }
+            break;
+        }
+        case QXmlStreamReader::Characters: {
+            if (!stack.isEmpty()) {
+                // Update the value of the current node with the text data
+                stack.top().value = reader->text().trimmed().toString();
+            }
+            break;
+        }
+        case QXmlStreamReader::EndElement: {
+            if (!stack.isEmpty()) {
+                const QStringView view = reader->name();
+                const QString &name = view.toString();
+                if (stack.top().isArray) {
+                    // Add the current value to the parent's array
+                    QJsonArray array = stack.top().parent->value.toArray();
+                    array.append(stack.top().value);
+                } else {
+                    // Add the current value to the parent's object
+                    QJsonObject object = stack.top().parent->value.toObject();
+                    object[name] = stack.top().value;
+                }
+                // Pop the current node
+                stack.pop();
+            }
+            break;
+        }
+        default:
+            break;
+        }
+        reader->readNext();
+    }
+    if (!stack.isEmpty()) {
+        // Error: Unclosed elements
+        return QJsonValue();
+    }
+    return stack.top().value;
+}
 
 
 /* Level 2 */
