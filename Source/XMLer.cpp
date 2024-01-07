@@ -76,7 +76,7 @@ XMLer::XMLer(QWidget *parent) : QWidget(parent)
                           "color: black;"
                           "}";
 
-    // Setting the palette for each button
+    // Setting the stylesheet
     browseButton->setStyleSheet(buttonStyle);
     compressButton->setStyleSheet(buttonStyle);
     decompressButton->setStyleSheet(buttonStyle);
@@ -103,7 +103,6 @@ XMLer::XMLer(QWidget *parent) : QWidget(parent)
     row2Layout->addLayout(col1layout);
     row2Layout->addWidget(resultTextEdit);
     row2Layout->addLayout(col2layout);
-    // layout->addWidget(browseButton);
     layout->addLayout(row2Layout);
 
     row3Layout->addWidget(showSocialNetwork);
@@ -113,7 +112,6 @@ XMLer::XMLer(QWidget *parent) : QWidget(parent)
     row3Layout->addWidget(postSearchButton);
     layout->addLayout(row3Layout);
 
-    // layout->addWidget(postSearchButton);
 
     connect(browseButton, &QPushButton::clicked, this, &XMLer::browseFile);
     connect(compressButton, &QPushButton::clicked, this, &XMLer::compressXml);
@@ -134,6 +132,8 @@ XMLer::XMLer(QWidget *parent) : QWidget(parent)
     connect(postSearchButton, &QPushButton::clicked, this, &XMLer::postSearch);
 }
 
+/****************************** Functions Connected to Buttons **************************************/
+/* Level 1 */
 void XMLer::browseFile()
 {
     QString filePath = QFileDialog::getOpenFileName(this, "Open XML File", "", "XML Files (*.xml)");
@@ -311,8 +311,6 @@ void XMLer::formatXml(){
 
 
 void XMLer::ToJSON(){
-
-
     if (!resultTextEdit->toPlainText().isEmpty()) {
         stack_undo.push(resultTextEdit->toPlainText());
         // Open the XML file
@@ -388,4 +386,94 @@ void XMLer::redo(void) {
 
 }
 
+/* Level 2 */
+void XMLer::drawGraph()
+{
+    if (!resultTextEdit->toPlainText().isEmpty())
+    {
+        // Read XML content from the file
+        QString textContent = resultTextEdit->toPlainText();
+        QVector<QString> xmlLines;
+        QTextStream in(&textContent);
+
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            xmlLines.push_back(line);
+        }
+
+        QVector<Vertex> parsed;
+        parsed = xmlParse(xmlLines);
+
+        // For Testing
+        // Debug output to check if 'parsed' is non-empty
+        // qDebug() << "Number of vertices in parsed: " << parsed.size();
+
+        // if (!parsed.isEmpty())
+        // {
+        //     for (int i = 0; i < parsed.size(); ++i)
+        //     {
+        //         // Debug output to check the content of the first vertex
+        //         qDebug() << "User Name: " << parsed[i].user_name;
+        //         qDebug() << "User ID: " << parsed[i].user_id;
+        //         qDebug() << "Followers IDs: " << parsed[i].followers_id;
+        //     }
+        // }
+        createGraphVisualization(parsed);
+    }
+    else
+    {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+}
+
 /****************************** Private Functions **********************************/
+/* Level 1 */
+
+/* Level 2 */
+void XMLer::createGraphVisualization(const QVector<Vertex> &vec)
+{
+
+    remove("Graph.dot");
+    QString temp;
+
+    QString dotFile_Str = "digraph test {\nnode [shape=";
+    dotFile_Str += temp + "record ," + temp + "  color=" + temp + "black" + temp + "] \n\n";
+
+    for (const auto &v : vec)
+    {
+        dotFile_Str += v.user_id + "[ label = " + temp + "\"{Name: " + v.user_name + " | ID: " + v.user_id + "} \"" + temp + "]\n" + v.user_id + " -> {";
+
+        for (unsigned int i = 0; i < v.followers_id.size(); i++)
+        {
+            dotFile_Str += v.followers_id.at(i);
+            if (i < v.followers_id.size() - 1)
+            {
+                dotFile_Str += ",";
+            }
+        }
+        dotFile_Str += "}\n";
+    }
+    dotFile_Str += "}";
+
+    std::ofstream img("Graph.dot");
+    img << dotFile_Str.toStdString();
+    img.close();
+
+    system("dot -Tpng -O Graph.dot");
+    QString imagePath = "Graph.dot.png";
+
+    QPixmap image(imagePath);
+
+    if (image.isNull())
+    {
+        QMessageBox::warning(nullptr, "Error", "Failed to open the image.");
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setIconPixmap(image);
+        msgBox.setWindowTitle("Graph Visualization");
+        msgBox.exec();
+    }
+}
