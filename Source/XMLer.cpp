@@ -366,4 +366,16 @@ void XMLer::ToJSON(){
 
 }
 
+
+void XMLer::undo(void) {
+
+    if (!stack_undo.empty())
+    {
+        stack_redo.push(resultTextEdit->toPlainText());
+        resultTextEdit->setPlainText(stack_undo.top());
+        stack_undo.pop();
+    }
+
+}
+
 /****************************** Private Functions **********************************/
