@@ -309,4 +309,61 @@ void XMLer::formatXml(){
 
 }
 
+
+void XMLer::ToJSON(){
+
+
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+        stack_undo.push(resultTextEdit->toPlainText());
+        // Open the XML file
+        QString XML;
+        QString JSON;
+        // Read and store the original XML content
+        QString textContent=resultTextEdit->toPlainText();
+        QTextStream in(&textContent);
+        XML = in.readAll();
+        QString Block;
+
+        JSON = JSON + "{\n";
+
+        int y = 1;
+
+        for (int x = 0; x < XML.length(); x++) {
+            if (XML[x] == '<') {
+                while (XML[x + y] != '>') {
+                    Block = Block + XML[x + y];
+                    y++;
+                }
+                y = 1;
+
+                if (XML[x + 1] != '/') {
+                    qDebug() << "\"";
+                    JSON = JSON + "\"";
+                } else {
+                    x = x + 1 + Block.length();
+                    close(Block,&JSON);
+                    Block.clear();
+                }
+
+            } else if (XML[x] == '>') {
+                qDebug() << "\"";
+                JSON = JSON + "\"";
+
+                open(Block,&JSON);
+                Block.clear();
+
+            } else {
+                qDebug() << XML[x];
+                JSON = JSON + XML[x];
+            }
+        }
+        JSON += "\n}";
+        resultTextEdit->setPlainText(JSON);
+
+    } else {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+
+}
+
 /****************************** Private Functions **********************************/
