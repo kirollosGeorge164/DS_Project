@@ -717,6 +717,24 @@ void XMLer::grapInfo()
 /****************************** Private Functions **********************************/
 /* Level 1 */
 // Check consistency
+// Reading tags
+QString XMLer::extractOpeningTag(const QString& line) {
+    int start = line.indexOf('<');
+    int end = line.indexOf('>', start);
+    if (start != -1 && line[start + 1] != '/')
+        return line.mid(start + 1, end - start - 1);
+    else
+        return "INVALID";
+}
+
+QString XMLer::extractClosingTag(const QString& line) {
+    int start = line.indexOf('/');
+    int end = line.indexOf('>', start);
+    if (start != -1)
+        return line.mid(start + 1, end - start - 1);
+    else
+        return "INVALID";
+}
 bool XMLer::checkConsistency(const QVector<QString>& xmlLines) {
     QStack<QString> tagStack;
     for (int i = 0; i < xmlLines.size(); i++) {
