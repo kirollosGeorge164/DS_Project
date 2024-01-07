@@ -182,6 +182,35 @@ void XMLer::saveXml()
     }
 }
 
+void XMLer::compressXml() {
+    QString xmlContent = resultTextEdit->toPlainText();
+    stack_undo.push(resultTextEdit->toPlainText());
+    if (!xmlContent.isEmpty()) {
+        // Compress the XML content using a simple ad-hoc method
+        QString compressedXml = compressData(xmlContent);
+
+        // Display compressed XML in QTextEdit
+        resultTextEdit->setPlainText(compressedXml);
+    } else {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+}
+
+void XMLer::decompressXml() {
+    QString compressedXml = resultTextEdit->toPlainText();
+    stack_undo.push(resultTextEdit->toPlainText());
+    if (!compressedXml.isEmpty()) {
+        // Decompress the XML content using the same ad-hoc method
+        QString decompressedXml = decompressData(compressedXml);
+
+        // Display decompressed XML in QTextEdit
+        resultTextEdit->setPlainText(decompressedXml);
+    } else {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+}
+
+
 void XMLer::minifyXml(){
 
     stack_undo.push(resultTextEdit->toPlainText());
@@ -899,6 +928,21 @@ void XMLer::grapInfo()
 /* Level 1 */
 // Check consistency
 // Reading tags
+
+QString XMLer::compressData(const QString& data) {
+    QByteArray input = data.toUtf8();
+    QByteArray compressed = qCompress(input, 9);  // 9 is the compression level (0-9)
+
+    return QString(compressed.toBase64());
+}
+
+QString XMLer::decompressData(const QString& data) {
+    QByteArray compressed = QByteArray::fromBase64(data.toUtf8());
+    QByteArray decompressed = qUncompress(compressed);
+
+    return QString::fromUtf8(decompressed);
+}
+
 QString XMLer::extractOpeningTag(const QString& line) {
     int start = line.indexOf('<');
     int end = line.indexOf('>', start);
