@@ -680,6 +680,126 @@ QStringList XMLer::error_corrector(const QStringList& xmlLines, const QVector<Er
 
 
 /* Level 2 */
+
+// Parsing Algorithim
+QVector<Vertex> XMLer::xmlParse(const QVector<QString>& xmlLines){
+
+    QVector<Vertex> userVector;
+    int userNum = -1;
+    //int USERNUM=-1;
+    int id_counter = 0;
+    int postNumber=-1;
+    //int topicNumber=-1;
+
+    for (int j = 0; j < xmlLines.size(); j++)
+    {
+        for(int i = 0; i < (xmlLines[j]).size(); i++)
+        {
+            //qDebug() << i;
+            QString tag = "";
+
+            if (xmlLines[j][i] == '<' && xmlLines[j][i + 1] != '/') // open tag
+            {
+                i++;
+                while (xmlLines[j][i] != '>')
+                {
+                    tag += xmlLines[j][i];
+                    i++;
+                }
+                // qDebug() << tag;
+                if (tag == "user")
+                {
+                    if (userNum < userVector.size())
+                    {
+                        userNum++;
+                        postNumber=-1;
+                        id_counter = 0;
+                        userVector.resize(userNum + 1); // Ensure the vector has enough space
+                    }
+                    else
+                    {
+                        qDebug() << "Error: userNum exceeds vector size.";
+                    }
+                }
+
+                if (tag == "name")
+                {
+                    QString name = "";
+                    i++; // don't take > of open tag
+                    while (xmlLines[j][i] != '<')
+                    {
+                        name += xmlLines[j][i];
+                        i++;
+                    }
+                    if (userNum >= 0 && userNum < userVector.size())
+                    {
+                        userVector[userNum].user_name = name;
+                    }
+                    else
+                    {
+                        qDebug() << "Error: Invalid userNum.";
+                    }
+                }
+
+                if (tag == "id")
+                {
+                    QString userID = "";
+                    i++; // don't take > of open tag
+                    while (xmlLines[j][i] != '<')
+                    {
+                        userID += xmlLines[j][i];
+                        i++;
+                    }
+                    qDebug() << userID;
+                    if (userNum >= 0 && userNum < userVector.size())
+                    {
+                        if (id_counter == 0)
+                        {
+                            userVector[userNum].user_id = userID;
+                        }
+                        else
+                        {
+                            userVector[userNum].followers_id.push_back(userID);
+                        }
+                        id_counter++;
+                    }
+                    else
+                    {
+                        qDebug() << "Error: Invalid userNum.";
+                    }
+                }
+               
+                if(tag=="body")
+                {
+                    postNumber++;
+                    j++;
+                    
+                    QString content;
+                    while(!xmlLines[j].contains("/body"))
+                    {
+                       
+                        content.append(xmlLines[j]);
+                        j++;
+                    }
+                    userVector[userNum].posts.push_back(content);
+                    
+                }
+                if(tag=="topic")
+                {
+                   
+                    j++;
+                    userVector[userNum].topics.resize(postNumber+1);
+                    userVector[userNum].topics[postNumber].push_back(xmlLines[j].trimmed());
+                    
+                }
+            }
+        }
+    }
+
+    return userVector;
+}
+
+/***********************END OF PARSING*****************************/
 void XMLer::createGraphVisualization(const QVector<Vertex> &vec)
 {
 
