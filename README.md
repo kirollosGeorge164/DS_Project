@@ -1,6 +1,6 @@
 # DS_Project
 
-# XML Parser
+# XMLer
 
 ## The Program as ZIP file
 ### To open the .exe file please open : build-untitled-Desktop_Qt_6_6_1_MinGW_64_bit-Debug Folder --> exe Folder --> run untitled.exe
