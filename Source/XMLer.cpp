@@ -386,6 +386,37 @@ void XMLer::redo(void) {
 
 }
 
+void XMLer::checkXml() {
+    //QString filePath = fileLineEdit->text();
+    if (!resultTextEdit->toPlainText().isEmpty()) {
+        QString textContent=resultTextEdit->toPlainText();
+        QVector<QString> xmlLines;
+        QTextStream in(&textContent);
+
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            xmlLines.push_back(line);
+        }
+        // Testing
+        qDebug() << xmlLines[0];
+
+
+
+        if (checkConsistency(xmlLines))
+        {
+            QMessageBox::information(nullptr, "Ok", "The XML is consistent <3 ");
+        }
+        else
+        {
+            QMessageBox::warning(nullptr, "Warning", "The XML has errors :( ");
+        }
+
+    } else {
+        resultTextEdit->setPlainText("Please select an XML file.");
+    }
+}
+
 void XMLer::findErrorXml(){
     if (!resultTextEdit->toPlainText().isEmpty()) {
         QString textContent=resultTextEdit->toPlainText();
@@ -685,7 +716,35 @@ void XMLer::grapInfo()
 }
 /****************************** Private Functions **********************************/
 /* Level 1 */
+// Check consistency
+bool XMLer::checkConsistency(const QVector<QString>& xmlLines) {
+    QStack<QString> tagStack;
+    for (int i = 0; i < xmlLines.size(); i++) {
+        QString currentLine = xmlLines[i];
+        QString openingTag = extractOpeningTag(currentLine);
+        QString closingTag = extractClosingTag(currentLine);
 
+        if (openingTag != "INVALID" || closingTag != "INVALID") {
+            if (openingTag != "INVALID" && closingTag != "INVALID") {
+                // Both opening and closing tags present
+                if (openingTag != closingTag) {
+                    return false;
+                }
+            } else if (openingTag != "INVALID") {
+                // Opening tag encountered
+                tagStack.push(openingTag);
+            } else if (closingTag != "INVALID") {
+                // Closing tag encountered
+                if (tagStack.empty() || closingTag != tagStack.top()) {
+                    return false;
+                }
+                tagStack.pop();
+            }
+        }
+    }
+
+    return tagStack.empty();
+}
 /* detect error */
 bool XMLer::detectErrors(const QString& openTag, const QString& closedTag, QStack<QString>& tagStack, QString& errorType)
 {
