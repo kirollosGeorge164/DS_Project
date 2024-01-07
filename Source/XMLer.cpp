@@ -569,10 +569,7 @@ void XMLer::findMutual() //take the id of users from two text editor
             QString user2 = input2Edit.text();
             mutualFriends.clear();
             mutualNames.clear();
-            // Process the input as needed
-            // qDebug() << "Name: " << name;
-            // qDebug() << "Age: " << age;
-
+         
             for(int i=0;i<parsed.size();i++)
             {
                 if(user1== parsed[i].user_id)
@@ -625,10 +622,8 @@ void XMLer::findMutual() //take the id of users from two text editor
                 finalResult="There are no mutual followers between the 2 users \n";
             }
 
-            //inputDialog.accept();
             QDialog outputDialog;
             outputDialog.setWindowTitle("Mutual Followers");
-            //QLabel *resultLabel = new QLabel(finalResult, this);
             QLabel *resultLabel = new QLabel(finalResult, &outputDialog);
             QVBoxLayout *layout2 = new QVBoxLayout(&outputDialog);
             layout2->addWidget(resultLabel);
