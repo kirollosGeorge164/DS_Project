@@ -521,6 +521,83 @@ void XMLer::drawGraph()
     }
 }
 
+void XMLer::postSearch() {
+    if (!resultTextEdit->toPlainText().isEmpty())
+    {
+        QString textContent=resultTextEdit->toPlainText();
+        QVector<QString> xmlLines;
+        QTextStream in(&textContent);
+
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            xmlLines.push_back(line);
+        }
+
+        QVector<Vertex> parsed;
+        parsed = xmlParse(xmlLines);
+        QDialog inputDialog;
+        inputDialog.setWindowTitle("Write the topic");
+
+        QFormLayout formLayout(&inputDialog);
+
+        QLineEdit inputEdit;
+        formLayout.addRow("Topic:", &inputEdit);
+
+        QPushButton okButton("find");
+        formLayout.addRow(&okButton);
+        QPushButton okayButton("ok");
+        formLayout.addRow(&okayButton);
+        QObject::connect(&okayButton, &QPushButton::clicked, [&]() {
+            inputDialog.accept();
+        });
+        QObject::connect(&okButton, &QPushButton::clicked, [&]() {
+            QString search="";
+            QString post="";
+            search = inputEdit.text();
+            for(int i=0;i<parsed.size();i++)
+            {
+                for(int j=0;j<parsed[i].topics.size();j++)
+                {
+                    for(int k=0;k<parsed[i].topics[j].size();k++)
+                    {
+                        if(search==parsed[i].topics[j][k])
+                        {
+                            for(QChar character : parsed[i].posts[j])
+                            {
+                                if(character !=' ')
+                                    break;
+                                parsed[i].posts[j].remove(0,1);
+                            }
+                            post.append(parsed[i].posts[j]);
+                            post.append("\n");
+                        }
+                    }
+                }
+            }
+            if(post.isEmpty())
+            {
+                post="There are no posts to match";
+            }
+
+            QDialog outputDialog;
+            outputDialog.setWindowTitle("Post Search");
+            //QLabel *resultLabel = new QLabel(finalResult, this);
+            QLabel *resultLabel = new QLabel(post, &outputDialog);
+            QVBoxLayout *layout2 = new QVBoxLayout(&outputDialog);
+            layout2->addWidget(resultLabel);
+            QPushButton *okkButton=new QPushButton("ok", &outputDialog);
+            layout2->addWidget(okkButton);
+            QObject::connect(okkButton, &QPushButton::clicked, [&]() {
+                outputDialog.accept();
+            });
+            outputDialog.exec();
+        });
+        inputDialog.exec();
+
+    }
+}
+
 void XMLer::findMutual() //take the id of users from two text editor
 {
 
